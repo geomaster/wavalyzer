@@ -65,12 +65,15 @@ fft_result_t wavalyzer::fft_from_samples(const vector<float>& samples,
         int lower_sample = hertz_to_sample(lower_hertz, sample_rate, samples.size());
         int upper_sample = hertz_to_sample(upper_hertz, sample_rate, samples.size());
 
-        float sum = 0.0f;
+        float val = 0.0f;
         for (int sample = lower_sample; sample <= upper_sample; sample++) {
-            sum += abs(samples_c[sample]) / samples.size();
+            float curr = abs(samples_c[sample]);
+            if (curr > val) {
+                val = curr;
+            }
         }
 
-        res.push_back(sum / (upper_sample - lower_sample + 1));
+        res.push_back(val);
     }
 
     return res;
