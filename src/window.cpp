@@ -49,3 +49,13 @@ void wavalyzer::apply_hann_window(vector<float>& samples)
 {
     apply_window<hann_window>(samples);
 }
+
+float wavalyzer::get_hamming_window_gain()
+{
+    return (HAMMING_ALPHA + HAMMING_BETA) / 2.0f;
+}
+
+float wavalyzer::get_hann_window_gain()
+{
+    return 0.5f;
+}

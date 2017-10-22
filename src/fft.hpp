@@ -9,7 +9,8 @@ namespace wavalyzer {
                                   size_t sample_rate,
                                   size_t step_hertz,
                                   size_t min_hertz,
-                                  size_t max_hertz);
+                                  size_t max_hertz,
+                                  float window_normalization_factor = 1.0f);
 
 
 }

@@ -46,7 +46,8 @@ fft_result_t wavalyzer::fft_from_samples(const vector<float>& samples,
                                          size_t sample_rate,
                                          size_t step_hertz,
                                          size_t min_hertz,
-                                         size_t max_hertz)
+                                         size_t max_hertz,
+                                         float window_normalization_factor)
 {
     vector<complex<float>> samples_c;
     samples_c.reserve(samples.size());
@@ -58,6 +59,8 @@ fft_result_t wavalyzer::fft_from_samples(const vector<float>& samples,
     fft(samples_c);
 
     fft_result_t res;
+    float factor = 2.0f * window_normalization_factor / samples.size();
+
     for (size_t hertz = min_hertz; hertz <= max_hertz; hertz += step_hertz) {
         int lower_hertz = static_cast<int>(hertz) - static_cast<int>(step_hertz / 2);
         int upper_hertz = static_cast<int>(hertz) + static_cast<int>(step_hertz / 2);
@@ -65,15 +68,12 @@ fft_result_t wavalyzer::fft_from_samples(const vector<float>& samples,
         int lower_sample = hertz_to_sample(lower_hertz, sample_rate, samples.size());
         int upper_sample = hertz_to_sample(upper_hertz, sample_rate, samples.size());
 
-        float val = 0.0f;
+        float sum = 0.0f;
         for (int sample = lower_sample; sample <= upper_sample; sample++) {
-            float curr = abs(samples_c[sample]);
-            if (curr > val) {
-                val = curr;
-            }
+            sum += abs(samples_c[sample]);
         }
 
-        res.push_back(val);
+        res.push_back(factor * sum / (upper_sample - lower_sample + 1));
     }
 
     return res;
