@@ -31,6 +31,9 @@ namespace wavalyzer::gui {
                   float _step_hertz,
                   size_t _buckets);
 
+        std::string get_title();
+        std::string get_message();
+
         std::map<float, std::string> get_y_labels();
         std::pair<float, float> get_full_x_range();
         float get_x_granularity();

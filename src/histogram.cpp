@@ -40,6 +40,15 @@ map<float, string> histogram::get_y_labels()
     return labels;
 }
 
+string histogram::get_title()
+{
+    return "Histogram";
+}
+
+string histogram::get_message()
+{
+    return "Press Backspace to go back";
+}
 
 pair<float, float> histogram::get_full_x_range()
 {

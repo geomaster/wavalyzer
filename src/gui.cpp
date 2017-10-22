@@ -8,10 +8,18 @@ const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
 
 const int ZERO_Y = 545;
-const int ONE_Y = 35;
+const int ONE_Y = 80;
+
+const int TITLE_FONT_SIZE = 20;
+const int TITLE_Y = 10;
+const int TITLE_X = 25;
+const int MSG_END_X = 1175;
 
 const int ZERO_X = 100;
 const int ONE_X = 1175;
+
+const int HRULE_Y = 50;
+const int HRULE_WEIGHT = 1;
 
 const int LABEL_AXIS_GAP = 10;
 
@@ -27,7 +35,10 @@ const uint32_t BACK_COLOR =  0x222222ff;
 const uint32_t AXIS_COLOR =  0xffffffff;
 const uint32_t GUIDE_COLOR = 0x666666ff;
 
-diagram_window::diagram_window(diagram* _diagram) : diag(_diagram)
+const uint32_t TITLE_COLOR = 0xffffffff;
+const uint32_t MSG_COLOR =   0x666666ff;
+
+diagram_window::diagram_window(diagram* _diagram) : diag(_diagram), dirty(true)
 {
     window = make_unique<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "wavalyzer gui");
     if (!font.loadFromFile("assets/FiraMono-Regular.otf")) {
@@ -39,6 +50,7 @@ diagram_window::diagram_window(diagram* _diagram) : diag(_diagram)
     create_x_labels();
     create_y_labels();
     create_axes();
+    create_texts();
 }
 
 void diagram_window::create_y_labels()
@@ -87,8 +99,37 @@ void diagram_window::create_x_labels()
     }
 }
 
+void diagram_window::create_texts()
+{
+    title.setFont(font);
+    message.setFont(font);
+
+    title.setCharacterSize(TITLE_FONT_SIZE);
+    message.setCharacterSize(TITLE_FONT_SIZE);
+
+    title.setString(diag->get_title());
+    message.setString(diag->get_message());
+
+    title.setFillColor(sf::Color(TITLE_COLOR));
+    message.setFillColor(sf::Color(MSG_COLOR));
+
+    title.setPosition(sf::Vector2f(TITLE_X, TITLE_Y));
+    message.setPosition(sf::Vector2f(MSG_END_X, TITLE_Y));
+    message.move(sf::Vector2f(-message.getLocalBounds().width, 0.0f));
+}
+
+void diagram_window::draw_texts()
+{
+    window->draw(title);
+    window->draw(message);
+}
+
 void diagram_window::create_axes()
 {
+    horizontal_rule.setSize(sf::Vector2f(MSG_END_X - TITLE_X, HRULE_WEIGHT));
+    horizontal_rule.setFillColor(sf::Color(AXIS_COLOR));
+    horizontal_rule.setPosition(sf::Vector2f(TITLE_X, HRULE_Y));
+
     x_axis.setSize(sf::Vector2f(ONE_X - ZERO_X, AXIS_WEIGHT));
     y_axis.setSize(sf::Vector2f(ZERO_Y - ONE_Y, AXIS_WEIGHT));
     x_axis.setFillColor(sf::Color(AXIS_COLOR));
@@ -101,6 +142,7 @@ void diagram_window::create_axes()
 
 void diagram_window::draw_axes()
 {
+    window->draw(horizontal_rule);
     window->draw(x_axis);
     window->draw(y_axis);
 }
@@ -128,19 +170,24 @@ void diagram_window::start()
 {
     while (window->isOpen())
     {
+        if (dirty) {
+            window->clear(sf::Color(BACK_COLOR));
+
+            draw_axes();
+            draw_labels();
+            draw_texts();
+            diag->draw(window.get(), make_pair(ZERO_X, ZERO_Y), make_pair(ONE_X - ZERO_X, ZERO_Y - ONE_Y));
+
+            window->display();
+
+            dirty = false;
+        }
+
         sf::Event event;
-        while (window->pollEvent(event))
+        while (window->waitEvent(event))
         {
             if (event.type == sf::Event::Closed)
                 window->close();
         }
-
-        window->clear(sf::Color(BACK_COLOR));
-
-        draw_axes();
-        draw_labels();
-        diag->draw(window.get(), make_pair(ZERO_X, ZERO_Y), make_pair(ONE_X - ZERO_X, ZERO_Y - ONE_Y));
-
-        window->display();
     }
 }

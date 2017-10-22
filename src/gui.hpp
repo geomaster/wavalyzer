@@ -26,6 +26,8 @@ namespace wavalyzer::gui {
     class diagram {
     public:
         virtual std::map<float, std::string> get_y_labels() = 0;
+        virtual std::string get_title() { return "Diagram"; }
+        virtual std::string get_message() { return ""; }
 
         virtual std::pair<float, float> get_full_x_range() = 0;
         virtual float get_x_granularity() = 0;
@@ -43,14 +45,18 @@ namespace wavalyzer::gui {
         sf::Font font;
         std::vector<sf::Text> x_labels, y_labels;
         std::vector<sf::RectangleShape> x_etches, y_guides;
-        sf::RectangleShape x_axis, y_axis;
+        sf::RectangleShape x_axis, y_axis, horizontal_rule;
+        sf::Text title, message;
+        bool dirty;
 
         void create_x_labels();
         void create_y_labels();
         void create_axes();
+        void create_texts();
 
         void draw_axes();
         void draw_labels();
+        void draw_texts();
 
     public:
         diagram_window(diagram* _diagram);
