@@ -31,7 +31,15 @@ int main(int argc, char* argv[])
 
             for (int j = 0; j < 400 / 2; j++) {
                 if (samples[2*j] >= lower && samples[2*j] <= upper) {
+                    cout << "M";
+                } else if (samples[2*j] >= lower - 0.01f && samples[2*j] <= upper + 0.01f){
+                    cout << "X";
+                } else if (samples[2*j] >= lower - 0.02f && samples[2*j] <= upper + 0.02f) {
+                    cout << "x";
+                } else if (samples[2*j] >= lower - 0.04f && samples[2*j] <= upper + 0.04f) {
                     cout << ":";
+                } else if (samples[2*j] >= lower - 0.08f && samples[2*j] <= upper + 0.08f) {
+                    cout << ".";
                 } else {
                     cout << " ";
                 }
@@ -41,26 +49,28 @@ int main(int argc, char* argv[])
         }
 
         vector<wavalyzer::fft_result_t> ffts;
-        while (w.get_total_samples() - w.get_samples_read() > 256) {
+        while (w.get_total_samples() - w.get_samples_read() > 128) {
             samples.clear();
-            w.read_samples(samples, 256);
-            wavalyzer::apply_hamming_window(samples);
-            ffts.push_back(wavalyzer::fft_from_samples(samples, w.get_sample_rate(), 50, 400, 2400));
+            w.read_samples(samples, 128);
+            wavalyzer::apply_hann_window(samples);
+            ffts.push_back(wavalyzer::fft_from_samples(samples, w.get_sample_rate(), 50, 200, 2400, 1.0f / wavalyzer::get_hann_window_gain()));
         }
 
-        for (int i = 0; i < (2400 - 400) / 50; i++) {
-            cout << setw(4) << (400 + 50*i) << "Hz ";
-            for (int j = 0; j < ffts.size(); j++) {
+        for (int i = 0; i < (2400 - 200) / 50; i++) {
+            cout << setw(4) << (200 + 50*i) << "Hz ";
+            for (int j = 0; j < min(ffts.size(), (size_t)200); j++) {
                 float bin_val = ffts[j][i];
-                if (bin_val >= 4.0f) {
+                if (bin_val >= 1.0f) {
+                    cout << "!";
+                } else if (bin_val >= 0.8f) {
                     cout << "M";
-                } else if (bin_val >= 2.0f) {
+                } else if (bin_val >= 0.64f) {
                     cout << "X";
-                } else if (bin_val >= 1.0f) {
+                } else if (bin_val >= 0.48f) {
                     cout << "x";
-                } else if (bin_val >= 0.5f) {
+                } else if (bin_val >= 0.32f) {
                     cout << ":";
-                } else if (bin_val >= 0.25f) {
+                } else if (bin_val >= 0.16f) {
                     cout << ".";
                 }  else {
                     cout << " ";
