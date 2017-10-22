@@ -10,7 +10,7 @@ const int WINDOW_HEIGHT = 400;
 const int ZERO_Y = 350;
 const int ONE_Y = 50;
 
-const int ZERO_X = 50;
+const int ZERO_X = 100;
 const int ONE_X = 850;
 
 const int LABEL_AXIS_GAP = 10;
@@ -73,6 +73,8 @@ diagram_window::diagram_window(diagram* _diagram) : diag(_diagram)
     if (!font.loadFromFile("assets/FiraMono-Regular.otf")) {
         throw gui_exception("Cannot load font");
     }
+
+    diag->set_x_range(diag->get_full_x_range());
 
     create_x_labels();
     create_y_labels();
