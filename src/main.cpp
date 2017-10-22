@@ -6,6 +6,7 @@
 #include "fft.hpp"
 #include "window.hpp"
 #include "gui.hpp"
+#include "histogram.hpp"
 
 using namespace std;
 
@@ -50,9 +51,9 @@ int main(int argc, char* argv[])
         }
 
         vector<wavalyzer::fft_result_t> ffts;
-        while (w.get_total_samples() - w.get_samples_read() > 128) {
+        while (w.get_total_samples() - w.get_samples_read() > 1024) {
             samples.clear();
-            w.read_samples(samples, 128);
+            w.read_samples(samples, 1024);
             wavalyzer::apply_hann_window(samples);
             ffts.push_back(wavalyzer::fft_from_samples(samples, w.get_sample_rate(), 50, 200, 2400, 1.0f / wavalyzer::get_hann_window_gain()));
         }
@@ -83,8 +84,19 @@ int main(int argc, char* argv[])
         }
 
 
-        wavalyzer::gui::diagram_window window(wavalyzer::gui::tmp_make_diagram());
-        window.start();
+        {
+            wavalyzer::gui::histogram hist(ffts[ffts.size() / 4], 200, 2400, 50, 10);
+            wavalyzer::gui::diagram_window window(&hist);
+            window.start();
+        }{
+            wavalyzer::gui::histogram hist(ffts[ffts.size() / 6], 200, 2400, 50, 10);
+            wavalyzer::gui::diagram_window window(&hist);
+            window.start();
+        }{
+            wavalyzer::gui::histogram hist(ffts[4 * ffts.size() / 6], 200, 2400, 50, 10);
+            wavalyzer::gui::diagram_window window(&hist);
+            window.start();
+        }
     } catch (exception& e) {
         cerr << "Error: " << e.what() << endl;
         return -2;
