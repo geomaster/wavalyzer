@@ -1,5 +1,6 @@
 #include "histogram.hpp"
 #include <cmath>
+#include <iostream>
 
 using namespace wavalyzer::gui;
 using namespace std;
@@ -38,6 +39,11 @@ map<float, string> histogram::get_y_labels()
     }
 
     return labels;
+}
+
+float histogram::get_min_x_width()
+{
+    return buckets * step_hertz;
 }
 
 string histogram::get_title()
@@ -108,8 +114,8 @@ map<float, string> histogram::get_x_labels()
 
 void histogram::set_x_range(pair<float, float> new_range)
 {
-    min_hertz = new_range.first;
-    max_hertz = new_range.second;
+    left_hertz = new_range.first;
+    right_hertz = new_range.second;
 
     update_bars();
 }
@@ -120,7 +126,7 @@ int histogram::hertz_to_index(float hertz)
         return -1;
     }
 
-    hertz -= left_hertz;
+    hertz -= min_hertz;
     hertz /= step_hertz;
 
     return static_cast<int>(hertz);
@@ -152,6 +158,8 @@ void histogram::update_bars()
             bucket_right_index = values.size() - 1;
         }
 
+        cout << "left_index[" << i << "] = " << bucket_left_index << endl;
+
         float sum = 0.0f;
         for (int j = bucket_left_index; j <= bucket_right_index; j++) {
             sum += values[j];
@@ -159,6 +167,7 @@ void histogram::update_bars()
 
         float value = sum / (bucket_right_index - bucket_left_index + 1);
         bar_values[i] = max(20.0f * log(value), -96.0f);
+        cout << "bar_values[" << i << "] = " << bar_values[i] << endl;
     }
 }
 

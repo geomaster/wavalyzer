@@ -3,12 +3,15 @@
 
 using namespace wavalyzer::gui;
 using namespace std;
+#include <iostream>
 
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
 
 const int ZERO_Y = 545;
 const int ONE_Y = 80;
+
+const int PIXELS_PER_DRAG_STEP = 50;
 
 const int TITLE_FONT_SIZE = 20;
 const int TITLE_Y = 10;
@@ -38,14 +41,19 @@ const uint32_t GUIDE_COLOR = 0x666666ff;
 const uint32_t TITLE_COLOR = 0xffffffff;
 const uint32_t MSG_COLOR =   0x666666ff;
 
-diagram_window::diagram_window(diagram* _diagram) : diag(_diagram), dirty(true)
+diagram_window::diagram_window(diagram* _diagram) : diag(_diagram),
+                                                    dirty(true),
+                                                    dragging(false),
+                                                    drag_start_x(0)
+
 {
     window = make_unique<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "wavalyzer gui");
     if (!font.loadFromFile("assets/FiraMono-Regular.otf")) {
         throw gui_exception("Cannot load font");
     }
 
-    diag->set_x_range(diag->get_full_x_range());
+    x_range = diag->get_full_x_range();
+    diag->set_x_range(x_range);
 
     create_x_labels();
     create_y_labels();
@@ -166,6 +174,77 @@ void diagram_window::draw_labels()
     }
 }
 
+pair<float, float> diagram_window::check_range(pair<float, float> range)
+{
+    if (range.second - range.first < diag->get_min_x_width()) {
+        // Construct a range centered around the current center but with the
+        // minimum width
+        float center = (range.second + range.first) / 2.0f,
+              w2 = diag->get_min_x_width() / 2.0f;
+
+        return make_pair(center - w2, center + w2);
+    }
+
+    if (range.first < diag->get_full_x_range().first || range.second > diag->get_full_x_range().second) {
+        return diag->get_full_x_range();
+    }
+
+    return range;
+}
+
+void diagram_window::handle_wheel(sf::Event::MouseWheelScrollEvent& event)
+{
+    float delta = event.delta * diag->get_x_granularity();
+    pair<float, float> new_xrange = x_range;
+    cout << event.delta << endl;
+    new_xrange.first += delta;
+    new_xrange.second -= delta;
+
+    new_xrange = check_range(new_xrange);
+    diag->set_x_range(new_xrange);
+    x_range = new_xrange;
+    create_x_labels();
+
+    dirty = true;
+}
+
+void diagram_window::handle_mouse_down(sf::Event::MouseButtonEvent& event)
+{
+    dragging = true;
+    drag_start_x = event.x;
+    drag_start_x_range = x_range;
+}
+
+void diagram_window::handle_mouse_up(sf::Event::MouseButtonEvent& event)
+{
+    dragging = false;
+}
+
+void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
+{
+    if (!dragging) {
+        return;
+    }
+
+    int new_x = event.x, diff = new_x - drag_start_x;
+    float delta = -diag->get_x_granularity() * (diff / PIXELS_PER_DRAG_STEP);
+
+    pair<float, float> new_xrange = drag_start_x_range;
+    new_xrange.first += delta;
+    new_xrange.second += delta;
+    if (new_xrange.first < diag->get_full_x_range().first || new_xrange.second > diag->get_full_x_range().second) {
+        return;
+    }
+
+    new_xrange = check_range(new_xrange);
+
+    diag->set_x_range(new_xrange);
+    x_range = new_xrange;
+    create_x_labels();
+
+    dirty = true;
+}
+
 void diagram_window::start()
 {
     while (window->isOpen())
@@ -184,10 +263,18 @@ void diagram_window::start()
         }
 
         sf::Event event;
-        while (window->waitEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window->close();
+        window->waitEvent(event);
+
+        if (event.type == sf::Event::Closed) {
+            window->close();
+        } else if (event.type == sf::Event::MouseWheelScrolled) {
+            handle_wheel(event.mouseWheelScroll);
+        } else if (event.type == sf::Event::MouseButtonPressed) {
+            handle_mouse_down(event.mouseButton);
+        } else if (event.type == sf::Event::MouseButtonReleased)  {
+            handle_mouse_up(event.mouseButton);
+        } else if (event.type == sf::Event::MouseMoved) {
+            handle_mouse_move(event.mouseMove);
         }
     }
 }

@@ -36,6 +36,7 @@ namespace wavalyzer::gui {
 
         std::map<float, std::string> get_y_labels();
         std::pair<float, float> get_full_x_range();
+        float get_min_x_width();
         float get_x_granularity();
         std::map<float, std::string> get_x_labels();
         void set_x_range(std::pair<float, float> new_range);

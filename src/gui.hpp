@@ -30,6 +30,7 @@ namespace wavalyzer::gui {
         virtual std::string get_message() { return ""; }
 
         virtual std::pair<float, float> get_full_x_range() = 0;
+        virtual float get_min_x_width() = 0;
         virtual float get_x_granularity() = 0;
         virtual std::map<float, std::string> get_x_labels() = 0;
 
@@ -45,9 +46,13 @@ namespace wavalyzer::gui {
         sf::Font font;
         std::vector<sf::Text> x_labels, y_labels;
         std::vector<sf::RectangleShape> x_etches, y_guides;
+        std::pair<float, float> x_range, drag_start_x_range;
         sf::RectangleShape x_axis, y_axis, horizontal_rule;
         sf::Text title, message;
-        bool dirty;
+        bool dirty, dragging;
+        int drag_start_x;
+
+        std::pair<float, float> check_range(std::pair<float, float> range);
 
         void create_x_labels();
         void create_y_labels();
@@ -57,6 +62,11 @@ namespace wavalyzer::gui {
         void draw_axes();
         void draw_labels();
         void draw_texts();
+
+        void handle_wheel(sf::Event::MouseWheelScrollEvent& event);
+        void handle_mouse_down(sf::Event::MouseButtonEvent& event);
+        void handle_mouse_up(sf::Event::MouseButtonEvent& event);
+        void handle_mouse_move(sf::Event::MouseMoveEvent& event);
 
     public:
         diagram_window(diagram* _diagram);
