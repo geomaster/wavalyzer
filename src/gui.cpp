@@ -4,14 +4,14 @@
 using namespace wavalyzer::gui;
 using namespace std;
 
-const int WINDOW_WIDTH = 900;
-const int WINDOW_HEIGHT = 400;
+const int WINDOW_WIDTH = 1200;
+const int WINDOW_HEIGHT = 600;
 
-const int ZERO_Y = 350;
-const int ONE_Y = 50;
+const int ZERO_Y = 545;
+const int ONE_Y = 35;
 
 const int ZERO_X = 100;
-const int ONE_X = 850;
+const int ONE_X = 1175;
 
 const int LABEL_AXIS_GAP = 10;
 
@@ -22,6 +22,10 @@ const float GUIDE_WEIGHT = 1.0f;
 
 const int X_LABEL_FONT_SIZE = 15;
 const int Y_LABEL_FONT_SIZE = 15;
+
+const uint32_t BACK_COLOR =  0x222222ff;
+const uint32_t AXIS_COLOR =  0xffffffff;
+const uint32_t GUIDE_COLOR = 0x666666ff;
 
 class dummy_diagram : public wavalyzer::gui::diagram {
     public:
@@ -90,7 +94,7 @@ void diagram_window::create_y_labels()
     for (const pair<float, string>& label : labels) {
         int y = static_cast<int>(label.first * (ONE_Y - ZERO_Y) + ZERO_Y);
         sf::RectangleShape guide(sf::Vector2f(ONE_X - ZERO_X, GUIDE_WEIGHT));
-        guide.setFillColor(sf::Color::White);
+        guide.setFillColor(sf::Color(GUIDE_COLOR));
         guide.setPosition(sf::Vector2f(ZERO_X, y));
 
         sf::Text label_text(label.second, font, Y_LABEL_FONT_SIZE);
@@ -131,8 +135,8 @@ void diagram_window::create_axes()
 {
     x_axis.setSize(sf::Vector2f(ONE_X - ZERO_X, AXIS_WEIGHT));
     y_axis.setSize(sf::Vector2f(ZERO_Y - ONE_Y, AXIS_WEIGHT));
-    x_axis.setFillColor(sf::Color::White);
-    y_axis.setFillColor(sf::Color::White);
+    x_axis.setFillColor(sf::Color(AXIS_COLOR));
+    y_axis.setFillColor(sf::Color(AXIS_COLOR));
 
     y_axis.setRotation(90.0f);
     x_axis.setPosition(sf::Vector2f(ZERO_X, ZERO_Y));
@@ -175,7 +179,7 @@ void diagram_window::start()
                 window->close();
         }
 
-        window->clear(sf::Color::Black);
+        window->clear(sf::Color(BACK_COLOR));
 
         draw_axes();
         draw_labels();

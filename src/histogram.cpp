@@ -7,7 +7,7 @@ using namespace std;
 const int Y_LABEL_STEP = 12;
 const int MAX_Y = 100;
 const int BAR_WIDTH = 30;
-const uint32_t BAR_COLOR = 0x7794ffff;
+const uint32_t BAR_COLOR = 0xf77a1bff;
 
 histogram::histogram(const std::vector<float>& _values,
                      float _min_hertz,
