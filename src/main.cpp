@@ -5,6 +5,7 @@
 #include "wav.hpp"
 #include "fft.hpp"
 #include "window.hpp"
+#include "gui.hpp"
 
 using namespace std;
 
@@ -81,6 +82,9 @@ int main(int argc, char* argv[])
             cout << endl;
         }
 
+
+        wavalyzer::gui::diagram_window window(wavalyzer::gui::tmp_make_diagram());
+        window.start();
     } catch (exception& e) {
         cerr << "Error: " << e.what() << endl;
         return -2;
