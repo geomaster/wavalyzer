@@ -85,15 +85,7 @@ int main(int argc, char* argv[])
 
 
         {
-            wavalyzer::gui::histogram hist(ffts[ffts.size() / 4], 200, 2400, 50, 10);
-            wavalyzer::gui::diagram_window window(&hist);
-            window.start();
-        }{
-            wavalyzer::gui::histogram hist(ffts[ffts.size() / 6], 200, 2400, 50, 10);
-            wavalyzer::gui::diagram_window window(&hist);
-            window.start();
-        }{
-            wavalyzer::gui::histogram hist(ffts[4 * ffts.size() / 6], 200, 2400, 50, 10);
+            wavalyzer::gui::histogram hist(ffts[ffts.size() / 4], 200, 2400, 50, 15);
             wavalyzer::gui::diagram_window window(&hist);
             window.start();
         }

@@ -27,50 +27,6 @@ const uint32_t BACK_COLOR =  0x222222ff;
 const uint32_t AXIS_COLOR =  0xffffffff;
 const uint32_t GUIDE_COLOR = 0x666666ff;
 
-class dummy_diagram : public wavalyzer::gui::diagram {
-    public:
-        std::map<float, std::string> get_y_labels() {
-            map<float, string> labels;
-            labels.insert(make_pair(0.0f, string("0%")));
-            labels.insert(make_pair(0.2f, string("20%")));
-            labels.insert(make_pair(0.4f, string("40%")));
-            labels.insert(make_pair(0.6f, string("60%")));
-            labels.insert(make_pair(0.8f, string("80%")));
-            labels.insert(make_pair(1.0f, string("100%")));
-
-            return labels;
-        }
-
-        std::pair<float, float> get_full_x_range() {
-            return make_pair(0.0f, 100.0f);
-        }
-
-        float get_x_granularity() {
-            return 1.0f;
-        }
-
-        std::map<float, std::string> get_x_labels() {
-            map<float, string> labels;
-            labels.insert(make_pair(0.0f, string("abc")));
-            labels.insert(make_pair(0.5f, string("def")));
-            labels.insert(make_pair(1.0f, string("ghi")));
-
-            return labels;
-        }
-
-        void set_x_range(std::pair<float, float> new_range) {
-
-        }
-
-        void draw(sf::RenderTarget* target, std::pair<int, int> top_left, std::pair<int, int> size) {
-
-        }
-};
-
-diagram* wavalyzer::gui::tmp_make_diagram() {
-    return new dummy_diagram();
-}
-
 diagram_window::diagram_window(diagram* _diagram) : diag(_diagram)
 {
     window = make_unique<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "wavalyzer gui");

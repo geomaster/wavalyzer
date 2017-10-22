@@ -36,8 +36,6 @@ namespace wavalyzer::gui {
         virtual void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size) = 0;
     };
 
-    diagram* tmp_make_diagram();
-
     class diagram_window {
     private:
         diagram* diag;
