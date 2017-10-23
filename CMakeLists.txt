@@ -12,8 +12,16 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 # Define sources and executable
 set(EXECUTABLE_NAME "wavalyzer")
-add_executable(${EXECUTABLE_NAME} src/main.cpp src/wav.cpp src/fft.cpp
-    src/window.cpp src/gui.cpp src/histogram.cpp)
+add_executable(${EXECUTABLE_NAME}
+    src/main.cpp
+    src/wav.cpp
+    src/fft.cpp
+    src/window.cpp
+    src/gui.cpp
+    src/histogram.cpp
+    src/spectrogram.cpp
+    src/common.cpp
+)
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
 # Detect and add SFML

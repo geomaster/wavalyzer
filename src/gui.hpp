@@ -50,7 +50,7 @@ namespace wavalyzer::gui {
         sf::RectangleShape x_axis, y_axis, horizontal_rule;
         sf::Text title, message;
         bool dirty, dragging;
-        int drag_start_x;
+        int drag_start_x, mouse_x;
 
         std::pair<float, float> check_range(std::pair<float, float> range);
 

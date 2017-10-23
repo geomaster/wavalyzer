@@ -14,8 +14,6 @@ namespace wavalyzer::gui {
         std::vector<sf::RectangleShape> bars;
         std::vector<float> bar_values;
 
-        std::string hertz_to_string(int hertz);
-
         void update_bars();
         int hertz_to_index(float hertz);
 

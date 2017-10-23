@@ -1,7 +1,9 @@
 #include "histogram.hpp"
 #include <cmath>
 #include <iostream>
+#include "common.hpp"
 
+using namespace wavalyzer;
 using namespace wavalyzer::gui;
 using namespace std;
 
@@ -63,16 +65,7 @@ pair<float, float> histogram::get_full_x_range()
 
 float histogram::get_x_granularity()
 {
-    return step_hertz;
-}
-
-string histogram::hertz_to_string(int hertz)
-{
-    if (hertz < 1000) {
-        return to_string(hertz) + "Hz";
-    } else {
-        return to_string(hertz / 1000) + "."  + to_string(hertz % 1000 / 100) + "kHz";
-    }
+    return get_bucket_width();
 }
 
 float histogram::get_bucket_width()
@@ -158,16 +151,13 @@ void histogram::update_bars()
             bucket_right_index = values.size() - 1;
         }
 
-        cout << "left_index[" << i << "] = " << bucket_left_index << endl;
-
         float sum = 0.0f;
         for (int j = bucket_left_index; j <= bucket_right_index; j++) {
             sum += values[j];
         }
 
         float value = sum / (bucket_right_index - bucket_left_index + 1);
-        bar_values[i] = max(20.0f * log(value), -96.0f);
-        cout << "bar_values[" << i << "] = " << bar_values[i] << endl;
+        bar_values[i] = sample_level_to_dbfs(value);
     }
 }
 

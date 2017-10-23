@@ -176,6 +176,18 @@ void diagram_window::draw_labels()
 
 pair<float, float> diagram_window::check_range(pair<float, float> range)
 {
+    if (range.first < diag->get_full_x_range().first && range.second > diag->get_full_x_range().second) {
+        return diag->get_full_x_range();
+    }
+
+    if (range.first < diag->get_full_x_range().first) {
+        range.first = diag->get_full_x_range().first;
+    }
+
+    if (range.second > diag->get_full_x_range().second) {
+        range.second = diag->get_full_x_range().second;
+    }
+
     if (range.second - range.first < diag->get_min_x_width()) {
         // Construct a range centered around the current center but with the
         // minimum width
@@ -185,20 +197,22 @@ pair<float, float> diagram_window::check_range(pair<float, float> range)
         return make_pair(center - w2, center + w2);
     }
 
-    if (range.first < diag->get_full_x_range().first || range.second > diag->get_full_x_range().second) {
-        return diag->get_full_x_range();
-    }
-
     return range;
 }
 
 void diagram_window::handle_wheel(sf::Event::MouseWheelScrollEvent& event)
 {
     float delta = event.delta * diag->get_x_granularity();
+    float alpha = static_cast<float>(mouse_x - ZERO_X) / (ONE_X - ZERO_X);
+    if (alpha < 0.0f) {
+        alpha = 0.0f;
+    } else if (alpha > 1.0f) {
+        alpha = 1.0f;
+    }
+
     pair<float, float> new_xrange = x_range;
-    cout << event.delta << endl;
-    new_xrange.first += delta;
-    new_xrange.second -= delta;
+    new_xrange.first += alpha * delta;
+    new_xrange.second -= (1.0f - alpha) * delta;
 
     new_xrange = check_range(new_xrange);
     diag->set_x_range(new_xrange);
@@ -222,6 +236,8 @@ void diagram_window::handle_mouse_up(sf::Event::MouseButtonEvent& event)
 
 void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
 {
+    mouse_x = event.x;
+
     if (!dragging) {
         return;
     }
