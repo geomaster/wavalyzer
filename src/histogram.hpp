@@ -32,10 +32,12 @@ namespace wavalyzer::gui {
         std::string get_title();
         std::string get_message();
 
+        float get_drag_step_normalized();
+
         std::map<float, std::string> get_y_labels();
         std::pair<float, float> get_full_x_range();
         float get_min_x_width();
-        float get_x_granularity();
+        float get_x_granularity(float);
         std::map<float, std::string> get_x_labels();
         void set_x_range(std::pair<float, float> new_range);
         void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size);

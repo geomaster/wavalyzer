@@ -43,6 +43,11 @@ map<float, string> histogram::get_y_labels()
     return labels;
 }
 
+float histogram::get_drag_step_normalized()
+{
+    return get_bucket_width_normalized();
+}
+
 float histogram::get_min_x_width()
 {
     return buckets * step_hertz;
@@ -63,7 +68,7 @@ pair<float, float> histogram::get_full_x_range()
     return make_pair(min_hertz, max_hertz);
 }
 
-float histogram::get_x_granularity()
+float histogram::get_x_granularity(float)
 {
     return get_bucket_width();
 }

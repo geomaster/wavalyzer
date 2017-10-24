@@ -1,5 +1,8 @@
 #include "spectrogram.hpp"
 #include "common.hpp"
+#include <ctime>
+#include <iostream>
+#include <cstring>
 
 using namespace std;
 using namespace wavalyzer::gui;
@@ -9,13 +12,24 @@ const int MIN_MS_IN_VIEW = 5;
 const int Y_LABEL_COUNT = 15;
 const int X_LABEL_COUNT = 10;
 
+const int COLOR_STOP_COUNT = 6;
+
+const int COLOR_STOPS[6][3] = { {  34,  34,  34 },
+                                {   0,   0, 255 },
+                                { 128,   0, 128 },
+                                { 255,   0,   0 },
+                                { 255, 255,   0 },
+                                { 255, 255, 255 } };
+
+const float DBFS_STOPS[] = { -80.0f, -64.0f, -48.0f, -32.0f, -16.0f, 0.0f };
+const float GAIN_DBFS = 15.0f;
+
 spectrogram::spectrogram(const std::vector<fft_result_t>& _fft_results,
                          int _step_ms,
                          float _min_hertz,
                          float _max_hertz,
                          float _step_hertz) :
 
-                         fft(_fft_results),
                          step_ms(_step_ms),
                          min_hertz(_min_hertz),
                          max_hertz(_max_hertz),
@@ -28,6 +42,21 @@ spectrogram::spectrogram(const std::vector<fft_result_t>& _fft_results,
 {
     right_ms = max_ms - 1;
     sprite.setTexture(cached_texture);
+
+    // Transpose the FFT matrix to imrpove cache locality when
+    // rendering, and also convert the sample levels to dBFS to
+    // avoid expensive log() calls inside hot loops
+    size_t fft_h = _fft_results.size(),
+           fft_w = _fft_results[0].size();
+
+    fft_matrix_w = fft_h;
+
+    fft_dbfs = new float[fft_w * fft_h];
+    for (size_t i = 0; i < fft_h; i++) {
+        for (size_t j = 0; j < fft_w; j++) {
+            fft_dbfs[j * fft_matrix_w + i] = sample_level_to_dbfs(_fft_results[i][j]);
+        }
+    }
 }
 
 map<float, string> spectrogram::get_y_labels()
@@ -62,9 +91,23 @@ float spectrogram::get_min_x_width()
     return MIN_MS_IN_VIEW;
 }
 
-float spectrogram::get_x_granularity()
+float spectrogram::get_x_granularity(float min_drag_step)
 {
-    return step_ms * 10;
+    if (get_drag_step_normalized() < min_drag_step) {
+        return max(static_cast<float>(step_ms), min_drag_step * (right_ms - left_ms));
+    } else {
+        return step_ms;
+    }
+}
+
+float spectrogram::get_zoom_granularity()
+{
+    return max(static_cast<float>(step_ms), static_cast<float>(right_ms - left_ms) * 0.1f);
+}
+
+float spectrogram::get_drag_step_normalized()
+{
+    return static_cast<float>(step_ms) / (right_ms - left_ms);
 }
 
 map<float, string> spectrogram::get_x_labels()
@@ -93,36 +136,30 @@ void spectrogram::render_spectrogram_texture(pair<int, int> size)
         }
 
         cached_texture_size = size;
+        pixels.resize(size.first * size.second * 4);
     }
 
-    vector<vector<sf::Color>> columns;
-    for (int ms = left_ms - step_ms, i = 0; ms <= right_ms + step_ms && ms < max_ms; ms += step_ms, i++) {
-        if (ms < 0) {
-            ms = 0;
-        }
+    clock_t t = clock();
+    float hertz_px_step = static_cast<float>(max_hertz - min_hertz) / ((size.second - 1) * step_hertz),
+          ms_px_step = static_cast<float>(right_ms - left_ms) / ((size.first - 1) * step_ms),
+          left_ms_offset = static_cast<float>(left_ms) / step_ms;
+    int fft_w = fft_matrix_w;
 
-        vector<sf::Color> column;
-        column.reserve(size.second);
-        const fft_result_t& fft_result = fft[ms / step_ms];
-
-        for (int y = 0; y < size.second; y++) {
-            float alpha = 1.0f - (static_cast<float>(y) / (size.second - 1)),
-                  hertz = min_hertz + alpha * (max_hertz - min_hertz);
-
-            int bucket = floor((hertz - min_hertz) / step_hertz);
-            float dbfs = sample_level_to_dbfs(fft_result[bucket]);
-
-            column.push_back(color_from_dbfs(dbfs));
-        }
-
-        columns.push_back(move(column));
-    }
-
-    vector<sf::Uint8> pixels(size.first * size.second * 4);
+    int last_bucket = -1;
     for (int y = 0; y < size.second; y++) {
+        int bucket = floor((size.second - 1 - y) * hertz_px_step);
+
+        // Fast path - same bucket, just copy the row above
+        if (bucket == last_bucket) {
+            int prev_row_start = (y - 1) * size.first * 4,
+                this_row_start = y * size.first * 4;
+
+            memcpy(&pixels[this_row_start], &pixels[prev_row_start], size.first * 4);
+            continue;
+        }
+
         for (int x = 0; x < size.first; x++) {
-            float alpha = static_cast<float>(x) / (size.first - 1),
-                  ms_frac = alpha * (right_ms - left_ms) / step_ms;
+            float ms_frac = left_ms_offset + x * ms_px_step;
 
             int lerp_left = static_cast<int>(floor(ms_frac)),
                 lerp_right = static_cast<int>(ceil(ms_frac));
@@ -138,41 +175,73 @@ void spectrogram::render_spectrogram_texture(pair<int, int> size)
 
             float lerp_alpha = 1.0f - (ms_frac - lerp_left);
 
-            sf::Color color_left = columns[lerp_left][y],
-                      color_right = columns[lerp_right][y];
+            float dbfs_left = fft_dbfs[bucket * fft_w + lerp_left],
+                  dbfs_right = fft_dbfs[bucket * fft_w + lerp_right];
 
-            sf::Color lerp_color = sf::Color(lerp(color_left.r, color_right.r, lerp_alpha),
-                                             lerp(color_left.g, color_right.g, lerp_alpha),
-                                             lerp(color_left.b, color_right.b, lerp_alpha),
-                                             255);
+            float lerp_value = lerp(dbfs_left, dbfs_right, lerp_alpha);
+            sf::Color lerp_color = color_from_dbfs(lerp_value);
 
             //pixels[y * size.first + x] = lerp_color.toInteger() | 0x000000ff;
             pixels[y * size.first * 4 + x * 4 + 0] = lerp_color.r;
             pixels[y * size.first * 4 + x * 4 + 1] = lerp_color.g;
             pixels[y * size.first * 4 + x * 4 + 2] = lerp_color.b;
             pixels[y * size.first * 4 + x * 4 + 3] = lerp_color.a;
-
         }
+
+        last_bucket = bucket;
     }
 
+    t = clock() - t;
+    cout << "Rendering took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
+
+    t = clock();
     cached_texture.update(&pixels[0]);
+    t = clock() - t;
+    cout << "Updating took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
 }
 
 sf::Color spectrogram::color_from_dbfs(float dbfs)
 {
-    // TODO: Non-greyscale color coding
-    int grey_level = 255.0f * (1.0f - (dbfs / -96.0f));
+    dbfs += GAIN_DBFS;
 
-    return sf::Color(grey_level, grey_level, grey_level, 255);
+    if (dbfs < DBFS_STOPS[0]) {
+        return sf::Color(COLOR_STOPS[0][0], COLOR_STOPS[0][1], COLOR_STOPS[0][2], 255);
+    }
+
+    int last = COLOR_STOP_COUNT - 1;
+    if (dbfs >= DBFS_STOPS[last]) {
+        return sf::Color(COLOR_STOPS[last][0], COLOR_STOPS[last][1], COLOR_STOPS[last][2], 255);
+    }
+
+    int stop;
+    for (stop = 1; stop < COLOR_STOP_COUNT; stop++) {
+        if (dbfs < DBFS_STOPS[stop]) {
+            break;
+        }
+    }
+
+    float alpha = 1.0f - (dbfs - DBFS_STOPS[stop - 1]) / (DBFS_STOPS[stop] - DBFS_STOPS[stop - 1]);
+    return sf::Color(lerp(COLOR_STOPS[stop - 1][0], COLOR_STOPS[stop][0], alpha),
+                     lerp(COLOR_STOPS[stop - 1][1], COLOR_STOPS[stop][1], alpha),
+                     lerp(COLOR_STOPS[stop - 1][2], COLOR_STOPS[stop][2], alpha),
+                     255);
 }
 
 void spectrogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pair<int, int> size)
 {
     if (cached_texture_size != size || cached_texture_dirty) {
+        clock_t t = clock();
         render_spectrogram_texture(size);
+        t = clock() - t;
+        cout << "Drawing took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
     }
 
     sf::Sprite new_sprite(cached_texture);
     new_sprite.setPosition(sf::Vector2f(bottom_left.first, bottom_left.second - size.second));
     target->draw(new_sprite);
+}
+
+spectrogram::~spectrogram()
+{
+    delete[] fft_dbfs;
 }

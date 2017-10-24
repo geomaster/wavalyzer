@@ -6,6 +6,8 @@
 #include <exception>
 #include <SFML/Graphics.hpp>
 
+const float DEFAULT_DRAG_STEP = 0.1f;
+
 namespace wavalyzer::gui {
     class gui_exception : public std::exception {
     private:
@@ -31,8 +33,18 @@ namespace wavalyzer::gui {
 
         virtual std::pair<float, float> get_full_x_range() = 0;
         virtual float get_min_x_width() = 0;
-        virtual float get_x_granularity() = 0;
+        virtual float get_x_granularity(float min_drag_step) = 0;
         virtual std::map<float, std::string> get_x_labels() = 0;
+
+        virtual float get_drag_step_normalized()
+        {
+            return DEFAULT_DRAG_STEP;
+        }
+
+        virtual float get_zoom_granularity()
+        {
+            return get_x_granularity(0.0f);
+        }
 
         virtual void set_x_range(std::pair<float, float> new_range) = 0;
 
@@ -51,6 +63,7 @@ namespace wavalyzer::gui {
         sf::Text title, message;
         bool dirty, dragging;
         int drag_start_x, mouse_x;
+        float min_drag_step;
 
         std::pair<float, float> check_range(std::pair<float, float> range);
 
@@ -67,6 +80,8 @@ namespace wavalyzer::gui {
         void handle_mouse_down(sf::Event::MouseButtonEvent& event);
         void handle_mouse_up(sf::Event::MouseButtonEvent& event);
         void handle_mouse_move(sf::Event::MouseMoveEvent& event);
+
+        int get_pixels_per_drag_step();
 
     public:
         diagram_window(diagram* _diagram);

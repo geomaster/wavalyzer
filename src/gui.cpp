@@ -1,5 +1,6 @@
 #include "gui.hpp"
 #include <SFML/Graphics.hpp>
+#include <cmath>
 
 using namespace wavalyzer::gui;
 using namespace std;
@@ -10,8 +11,6 @@ const int WINDOW_HEIGHT = 600;
 
 const int ZERO_Y = 545;
 const int ONE_Y = 80;
-
-const int PIXELS_PER_DRAG_STEP = 50;
 
 const int TITLE_FONT_SIZE = 20;
 const int TITLE_Y = 10;
@@ -44,7 +43,8 @@ const uint32_t MSG_COLOR =   0x666666ff;
 diagram_window::diagram_window(diagram* _diagram) : diag(_diagram),
                                                     dirty(true),
                                                     dragging(false),
-                                                    drag_start_x(0)
+                                                    drag_start_x(0),
+                                                    min_drag_step(1.0f / (ONE_X - ZERO_X))
 
 {
     window = make_unique<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "wavalyzer gui");
@@ -202,7 +202,7 @@ pair<float, float> diagram_window::check_range(pair<float, float> range)
 
 void diagram_window::handle_wheel(sf::Event::MouseWheelScrollEvent& event)
 {
-    float delta = event.delta * diag->get_x_granularity();
+    float delta = event.delta * diag->get_zoom_granularity();
     float alpha = static_cast<float>(mouse_x - ZERO_X) / (ONE_X - ZERO_X);
     if (alpha < 0.0f) {
         alpha = 0.0f;
@@ -234,6 +234,11 @@ void diagram_window::handle_mouse_up(sf::Event::MouseButtonEvent& event)
     dragging = false;
 }
 
+int diagram_window::get_pixels_per_drag_step()
+{
+    return static_cast<int>(ceil((ONE_X - ZERO_X) * diag->get_drag_step_normalized()));
+}
+
 void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
 {
     mouse_x = event.x;
@@ -243,7 +248,7 @@ void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
     }
 
     int new_x = event.x, diff = new_x - drag_start_x;
-    float delta = -diag->get_x_granularity() * (diff / PIXELS_PER_DRAG_STEP);
+    float delta = -diag->get_x_granularity(min_drag_step) * (diff / get_pixels_per_drag_step());
 
     pair<float, float> new_xrange = drag_start_x_range;
     new_xrange.first += delta;
@@ -268,10 +273,10 @@ void diagram_window::start()
         if (dirty) {
             window->clear(sf::Color(BACK_COLOR));
 
+            diag->draw(window.get(), make_pair(ZERO_X, ZERO_Y), make_pair(ONE_X - ZERO_X, ZERO_Y - ONE_Y));
             draw_axes();
             draw_labels();
             draw_texts();
-            diag->draw(window.get(), make_pair(ZERO_X, ZERO_Y), make_pair(ONE_X - ZERO_X, ZERO_Y - ONE_Y));
 
             window->display();
 

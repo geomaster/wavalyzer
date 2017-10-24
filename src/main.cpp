@@ -35,14 +35,14 @@ int main(int argc, char* argv[])
         int window_size = 2048;
         int min_freq = 100;
         int max_freq = 2000;
-        int freq_step = 1;
+        int freq_step = 20;
         int report_ms_interval = total_ms / 20;
         float ms_per_window = window_size / ms_samples;
 
         cout << "Analyzing. This may take a while.\n";
 
         vector<float> window_samples(window_size);
-        for (int i = ms_per_window / 2; i < total_ms - ms_per_window / 2; i++) {
+        for (int i = ceil(ms_per_window / 2); i < floor(total_ms - ms_per_window / 2); i++) {
             int left_sample = (i - ms_per_window / 2) * ms_samples;
             int right_sample = (i + ms_per_window / 2) * ms_samples;
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            wavalyzer::gui::histogram hist(ffts[ffts.size() / 4], min_freq, max_freq, freq_step, 15);
+            //wavalyzer::gui::histogram hist(ffts[ffts.size() / 4], min_freq, max_freq, freq_step, 15);
             wavalyzer::gui::spectrogram spect(ffts, 1, min_freq, max_freq, freq_step);
 
             wavalyzer::gui::diagram_window window(&spect);
