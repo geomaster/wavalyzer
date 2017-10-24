@@ -77,7 +77,7 @@ string spectrogram::get_title()
 
 string spectrogram::get_message()
 {
-    return "Click on a slice to zoom in";
+    return "Click on a slice to view histogram";
 }
 
 pair<float, float> spectrogram::get_full_x_range()
