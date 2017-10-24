@@ -1,6 +1,5 @@
 #include "spectrogram.hpp"
 #include "common.hpp"
-#include <ctime>
 #include <iostream>
 #include <cstring>
 
@@ -139,7 +138,6 @@ void spectrogram::render_spectrogram_texture(pair<int, int> size)
         pixels.resize(size.first * size.second * 4);
     }
 
-    clock_t t = clock();
     float hertz_px_step = static_cast<float>(max_hertz - min_hertz) / ((size.second - 1) * step_hertz),
           ms_px_step = static_cast<float>(right_ms - left_ms) / ((size.first - 1) * step_ms),
           left_ms_offset = static_cast<float>(left_ms) / step_ms;
@@ -161,43 +159,33 @@ void spectrogram::render_spectrogram_texture(pair<int, int> size)
         for (int x = 0; x < size.first; x++) {
             float ms_frac = left_ms_offset + x * ms_px_step;
 
-            int lerp_left = static_cast<int>(floor(ms_frac)),
-                lerp_right = static_cast<int>(ceil(ms_frac));
+            int nn_left = static_cast<int>(floor(ms_frac)),
+                nn_right = static_cast<int>(ceil(ms_frac));
 
-            if (lerp_right >= max_ms) {
-                lerp_right = max_ms - 1;
+            if (nn_right >= max_ms) {
+                nn_right = max_ms - 1;
             }
 
-            if (lerp_left > lerp_right) {
-                // TODO: Don't ignore undersampling?
-                lerp_left = lerp_right;
+            if (nn_left > nn_right) {
+                nn_left = nn_right;
             }
 
-            float lerp_alpha = 1.0f - (ms_frac - lerp_left);
+            float dbfs_left = fft_dbfs[bucket * fft_w + nn_left],
+                  dbfs_right = fft_dbfs[bucket * fft_w + nn_right];
 
-            float dbfs_left = fft_dbfs[bucket * fft_w + lerp_left],
-                  dbfs_right = fft_dbfs[bucket * fft_w + lerp_right];
+            float nn_value = (ms_frac - nn_left) > 0.5f ? dbfs_right : dbfs_left;
 
-            float lerp_value = lerp(dbfs_left, dbfs_right, lerp_alpha);
-            sf::Color lerp_color = color_from_dbfs(lerp_value);
-
-            //pixels[y * size.first + x] = lerp_color.toInteger() | 0x000000ff;
-            pixels[y * size.first * 4 + x * 4 + 0] = lerp_color.r;
-            pixels[y * size.first * 4 + x * 4 + 1] = lerp_color.g;
-            pixels[y * size.first * 4 + x * 4 + 2] = lerp_color.b;
-            pixels[y * size.first * 4 + x * 4 + 3] = lerp_color.a;
+            sf::Color nn_color = color_from_dbfs(nn_value);
+            pixels[y * size.first * 4 + x * 4 + 0] = nn_color.r;
+            pixels[y * size.first * 4 + x * 4 + 1] = nn_color.g;
+            pixels[y * size.first * 4 + x * 4 + 2] = nn_color.b;
+            pixels[y * size.first * 4 + x * 4 + 3] = nn_color.a;
         }
 
         last_bucket = bucket;
     }
 
-    t = clock() - t;
-    cout << "Rendering took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
-
-    t = clock();
     cached_texture.update(&pixels[0]);
-    t = clock() - t;
-    cout << "Updating took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
 }
 
 sf::Color spectrogram::color_from_dbfs(float dbfs)
@@ -230,10 +218,7 @@ sf::Color spectrogram::color_from_dbfs(float dbfs)
 void spectrogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pair<int, int> size)
 {
     if (cached_texture_size != size || cached_texture_dirty) {
-        clock_t t = clock();
         render_spectrogram_texture(size);
-        t = clock() - t;
-        cout << "Drawing took " << 1000.0f * t / CLOCKS_PER_SEC << "ms" << endl;
     }
 
     sf::Sprite new_sprite(cached_texture);

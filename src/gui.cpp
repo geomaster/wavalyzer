@@ -6,8 +6,11 @@ using namespace wavalyzer::gui;
 using namespace std;
 #include <iostream>
 
+const int MAX_CLICK_DISTANCE = 5;
+
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
+const int VRULE_WEIGHT = 2;
 
 const int ZERO_Y = 545;
 const int ONE_Y = 80;
@@ -36,14 +39,12 @@ const int Y_LABEL_FONT_SIZE = 15;
 const uint32_t BACK_COLOR =  0x222222ff;
 const uint32_t AXIS_COLOR =  0xffffffff;
 const uint32_t GUIDE_COLOR = 0x666666ff;
+const uint32_t VRULE_COLOR = 0xff5000af;
 
 const uint32_t TITLE_COLOR = 0xffffffff;
 const uint32_t MSG_COLOR =   0x666666ff;
 
-diagram_window::diagram_window(diagram* _diagram) : diag(_diagram),
-                                                    dirty(true),
-                                                    dragging(false),
-                                                    drag_start_x(0),
+diagram_window::diagram_window(diagram* _diagram) : handler(nullptr),
                                                     min_drag_step(1.0f / (ONE_X - ZERO_X))
 
 {
@@ -52,6 +53,20 @@ diagram_window::diagram_window(diagram* _diagram) : diag(_diagram),
         throw gui_exception("Cannot load font");
     }
 
+    if (_diagram != nullptr) {
+        set_diagram(_diagram);
+    }
+}
+
+void diagram_window::set_diagram(diagram* new_diagram)
+{
+    diag = new_diagram;
+    dragging = false;
+    drag_start_x = 0;
+    dirty = true;
+    mouse_x = 0;
+    click_mark_x = 0;
+
     x_range = diag->get_full_x_range();
     diag->set_x_range(x_range);
 
@@ -59,6 +74,7 @@ diagram_window::diagram_window(diagram* _diagram) : diag(_diagram),
     create_y_labels();
     create_axes();
     create_texts();
+
 }
 
 void diagram_window::create_y_labels()
@@ -134,6 +150,9 @@ void diagram_window::draw_texts()
 
 void diagram_window::create_axes()
 {
+    vertical_rule.setSize(sf::Vector2f(VRULE_WEIGHT, ZERO_Y - ONE_Y));
+    vertical_rule.setFillColor(sf::Color(VRULE_COLOR));
+
     horizontal_rule.setSize(sf::Vector2f(MSG_END_X - TITLE_X, HRULE_WEIGHT));
     horizontal_rule.setFillColor(sf::Color(AXIS_COLOR));
     horizontal_rule.setPosition(sf::Vector2f(TITLE_X, HRULE_Y));
@@ -150,6 +169,7 @@ void diagram_window::create_axes()
 
 void diagram_window::draw_axes()
 {
+    window->draw(vertical_rule);
     window->draw(horizontal_rule);
     window->draw(x_axis);
     window->draw(y_axis);
@@ -226,12 +246,28 @@ void diagram_window::handle_mouse_down(sf::Event::MouseButtonEvent& event)
 {
     dragging = true;
     drag_start_x = event.x;
+    drag_start_y = event.y;
     drag_start_x_range = x_range;
 }
 
 void diagram_window::handle_mouse_up(sf::Event::MouseButtonEvent& event)
 {
     dragging = false;
+
+    // If the distance between the place where the key was pressed and the place
+    // where it is released, we should consider this a click.
+    int diff_x = event.x - drag_start_x,
+        diff_y = event.y - drag_start_y;
+
+    if (handler != nullptr &&
+        event.x >= ZERO_X && event.y <= ONE_X &&
+        diff_x * diff_x + diff_y * diff_y <= MAX_CLICK_DISTANCE * MAX_CLICK_DISTANCE) {
+
+        float alpha = static_cast<float>(event.x - ZERO_X) / (ONE_X - ZERO_X),
+              value = alpha * (x_range.second - x_range.first) + x_range.first;
+
+        handler->on_click_mark(value);
+    }
 }
 
 int diagram_window::get_pixels_per_drag_step()
@@ -241,7 +277,15 @@ int diagram_window::get_pixels_per_drag_step()
 
 void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
 {
-    mouse_x = event.x;
+    if (mouse_x != event.x) {
+        mouse_x = event.x;
+
+        if (mouse_x >= ZERO_X && mouse_x <= ONE_X) {
+            click_mark_x = mouse_x;
+            vertical_rule.setPosition(sf::Vector2f(event.x, ONE_Y));
+            dirty = true;
+        }
+    }
 
     if (!dragging) {
         return;
@@ -264,6 +308,12 @@ void diagram_window::handle_mouse_move(sf::Event::MouseMoveEvent& event)
     create_x_labels();
 
     dirty = true;
+}
+
+void diagram_window::set_event_handler(diagram_event_handler* new_handler)
+{
+    handler = new_handler;
+    handler->set_parent(this);
 }
 
 void diagram_window::start()
@@ -296,6 +346,8 @@ void diagram_window::start()
             handle_mouse_up(event.mouseButton);
         } else if (event.type == sf::Event::MouseMoved) {
             handle_mouse_move(event.mouseMove);
+        } else if (event.type == sf::Event::KeyReleased && handler != nullptr) {
+            handler->on_key_press(event.key.code);
         }
     }
 }

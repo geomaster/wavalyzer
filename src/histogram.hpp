@@ -41,6 +41,7 @@ namespace wavalyzer::gui {
         std::map<float, std::string> get_x_labels();
         void set_x_range(std::pair<float, float> new_range);
         void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size);
- 
+
+        virtual ~histogram() {}
     };
 }

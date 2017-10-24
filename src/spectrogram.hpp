@@ -42,6 +42,6 @@ namespace wavalyzer::gui {
 
         void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size);
 
-        ~spectrogram();
+        virtual ~spectrogram();
     };
 }

@@ -21,6 +21,7 @@ add_executable(${EXECUTABLE_NAME}
     src/histogram.cpp
     src/spectrogram.cpp
     src/common.cpp
+    src/handler.cpp
 )
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
