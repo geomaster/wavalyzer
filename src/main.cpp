@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
         int buckets = static_cast<int>(conf.buckets);
         int ms_step = static_cast<int>(conf.ms_step);
 
-        int report_ms_interval = total_ms / 20;
+        int report_ms_interval = total_ms / (20 * ms_step);
         float ms_per_window = window_size / ms_samples;
 
         cout << "Analyzing. This may take a while.\n";
@@ -224,7 +224,11 @@ int main(int argc, char* argv[])
                                                    1.0f / wavalyzer::get_hann_window_gain();
 
         vector<float> window_samples(window_size);
-        for (int i = ceil(ms_per_window / 2); i < floor(total_ms - ms_per_window / 2); i += ms_step) {
+
+        for (int i = ceil(ms_per_window / 2), counter = 0;
+             i < floor(total_ms - ms_per_window / 2);
+             i += ms_step, counter++) {
+
             int left_sample = (i - ms_per_window / 2) * ms_samples;
             int right_sample = (i + ms_per_window / 2) * ms_samples;
 
@@ -249,7 +253,7 @@ int main(int argc, char* argv[])
                                                        max_freq,
                                                        gain_compensation));
 
-            if (i % report_ms_interval == 0) {
+            if (counter % report_ms_interval == 0) {
                 cout << fixed << "Analyzed " <<
                     i << "ms of " << total_ms - ms_per_window << "ms ("
                     << setprecision(2) << static_cast<float>(100 * i) / (total_ms - ms_per_window) << " %)" << endl;
