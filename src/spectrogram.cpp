@@ -125,6 +125,7 @@ void spectrogram::set_x_range(pair<float, float> new_range)
 {
     left_ms = new_range.first;
     right_ms = new_range.second;
+    cached_texture_dirty = true;
 }
 
 void spectrogram::render_spectrogram_texture(pair<int, int> size)
@@ -219,6 +220,7 @@ void spectrogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pai
 {
     if (cached_texture_size != size || cached_texture_dirty) {
         render_spectrogram_texture(size);
+        cached_texture_dirty = false;
     }
 
     sf::Sprite new_sprite(cached_texture);
