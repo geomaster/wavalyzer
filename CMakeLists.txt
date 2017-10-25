@@ -11,27 +11,35 @@ project(wavalyzer)
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Define sources and executable
-set(EXECUTABLE_NAME "wavalyzer")
-add_executable(${EXECUTABLE_NAME}
-    src/main.cpp
-    src/wav.cpp
-    src/fft.cpp
-    src/window.cpp
-    src/gui.cpp
-    src/histogram.cpp
-    src/spectrogram.cpp
-    src/common.cpp
-    src/handler.cpp
+add_executable("wavalyzer"
+    src/wavalyzer/main.cpp
+    src/wavalyzer/wav.cpp
+    src/wavalyzer/fft.cpp
+    src/wavalyzer/window.cpp
+    src/wavalyzer/gui.cpp
+    src/wavalyzer/histogram.cpp
+    src/wavalyzer/spectrogram.cpp
+    src/wavalyzer/common.cpp
+    src/wavalyzer/handler.cpp
 )
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
+
+add_executable("harmful"
+    src/harmful/main.cpp
+    src/harmful/wav.cpp
+    src/harmful/synth.cpp
+    src/harmful/parser.cpp
+    src/harmful/sequencer.cpp
+    src/harmful/common.cpp
+)
 
 # Detect and add SFML
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 find_package(SFML 2 REQUIRED network audio graphics window system)
 if(SFML_FOUND)
   include_directories(${SFML_INCLUDE_DIR})
-  target_link_libraries(${EXECUTABLE_NAME} ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
+  target_link_libraries("wavalyzer" ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
 endif()
 
 # Install target
-install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
+install(TARGETS "wavalyzer" DESTINATION bin)
