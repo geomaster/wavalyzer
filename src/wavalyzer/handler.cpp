@@ -1,5 +1,7 @@
 #include "handler.hpp"
+#include "sfml_pdf.hpp"
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 using namespace wavalyzer;
@@ -20,7 +22,8 @@ main_diagram_event_handler::main_diagram_event_handler(const vector<fft_result_t
                                                        step_ms(_step_ms),
                                                        histogram_buckets(_histogram_buckets),
                                                        hist(nullptr),
-                                                       spect(nullptr)
+                                                       spect(nullptr),
+                                                       save_counter(0)
 {
     spect = new spectrogram(ffts, step_ms, min_freq, max_freq, step_freq);
 }
@@ -49,14 +52,27 @@ void main_diagram_event_handler::set_parent(diagram_window* new_parent)
 
 void main_diagram_event_handler::on_key_press(sf::Keyboard::Key key)
 {
-    if (hist == nullptr) {
-        return;
-    }
-
-    if (key == sf::Keyboard::BackSpace) {
+    if (key == sf::Keyboard::BackSpace && hist != nullptr) {
         delete hist;
         hist = nullptr;
         parent->set_diagram(spect);
+    } else if (key == sf::Keyboard::P) {
+        sfml_pdf pdf;
+        cout << "Please wait, rendering the diagram..." << endl;
+
+        if (hist != nullptr) {
+            pdf.draw_diagram(hist, false);
+        } else {
+            pdf.draw_diagram(spect, true);
+        }
+
+        string filename = "diagram_" + to_string(++save_counter) + ".pdf";
+        try {
+            pdf.save_to_file(filename);
+            cerr << "Saved to file`" << filename << "`" << endl;
+        } catch (std::exception &e) {
+            cerr << "Failed saving file `" << filename << "`: " << e.what() << endl;
+        }
     }
 }
 

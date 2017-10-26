@@ -16,7 +16,8 @@ namespace wavalyzer::gui {
         std::vector<sf::Uint8> pixels;
         bool cached_texture_dirty;
 
-        void render_spectrogram_texture(std::pair<int, int> size);
+        void update_texture(std::pair<int, int> size);
+        void render_texture_bytes(std::pair<int, int> size);
         sf::Color color_from_dbfs(float dbfs);
 
     public:
@@ -41,6 +42,7 @@ namespace wavalyzer::gui {
         void set_x_range(std::pair<float, float> new_range);
 
         void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size);
+        void draw_to_pdf(sfml_pdf& pdf, std::pair<int, int> bottom_left, std::pair<int, int> size);
 
         virtual ~spectrogram();
     };

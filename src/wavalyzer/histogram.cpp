@@ -9,7 +9,6 @@ using namespace std;
 
 const int Y_LABEL_STEP = 12;
 const int MAX_Y = 100;
-const int BAR_WIDTH = 30;
 const uint32_t BAR_COLOR = 0xf77a1bff;
 
 histogram::histogram(const std::vector<float>& _values,
@@ -166,18 +165,34 @@ void histogram::update_bars()
     }
 }
 
-void histogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pair<int, int> size)
+void histogram::update_bar_shapes(pair<int, int> bottom_left, pair<int, int> size)
 {
     float bucket_width_n = get_bucket_width_normalized();
     float bucket_width_px = bucket_width_n * size.first;
+    float bar_width = bucket_width_px / 2.0f;
+
     for (size_t i = 0; i < buckets; i++) {
         float value_scaled = (bar_values[i] + 96.0f) / 96.0f;
         float x = bottom_left.first + (i * bucket_width_px + bucket_width_px / 2.0f);
         float y = bottom_left.second - value_scaled * size.second;
 
-        bars[i].setSize(sf::Vector2f(BAR_WIDTH, value_scaled * size.second));
-        bars[i].setPosition(sf::Vector2f(x - BAR_WIDTH / 2.0f, y));
+        bars[i].setSize(sf::Vector2f(bar_width, value_scaled * size.second));
+        bars[i].setPosition(sf::Vector2f(x - bar_width / 2.0f, y));
+    }
+}
 
+void histogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pair<int, int> size)
+{
+    update_bar_shapes(bottom_left, size);
+    for (size_t i = 0; i < buckets; i++) {
         target->draw(bars[i]);
+    }
+}
+
+void histogram::draw_to_pdf(sfml_pdf& pdf, pair<int, int> bottom_left, pair<int, int> size)
+{
+    update_bar_shapes(bottom_left, size);
+    for (size_t i = 0; i < buckets; i++) {
+        pdf.draw(bars[i]);
     }
 }

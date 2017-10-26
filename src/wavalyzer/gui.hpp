@@ -5,6 +5,7 @@
 #include <map>
 #include <exception>
 #include <SFML/Graphics.hpp>
+#include "sfml_pdf.hpp"
 
 const float DEFAULT_DRAG_STEP = 0.1f;
 
@@ -49,6 +50,7 @@ namespace wavalyzer::gui {
         virtual void set_x_range(std::pair<float, float> new_range) = 0;
 
         virtual void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size) = 0;
+        virtual void draw_to_pdf(sfml_pdf& pdf, std::pair<int, int> bottom_left, std::pair<int, int> size) = 0;
 
         virtual ~diagram() {}
     };

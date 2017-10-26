@@ -15,6 +15,8 @@ namespace wavalyzer::gui {
         std::vector<float> bar_values;
 
         void update_bars();
+        void update_bar_shapes(std::pair<int, int> bottom_left, std::pair<int, int> size);
+
         int hertz_to_index(float hertz);
 
         float get_bucket_width();
@@ -41,6 +43,7 @@ namespace wavalyzer::gui {
         std::map<float, std::string> get_x_labels();
         void set_x_range(std::pair<float, float> new_range);
         void draw(sf::RenderTarget* target, std::pair<int, int> bottom_left, std::pair<int, int> size);
+        void draw_to_pdf(sfml_pdf& pdf, std::pair<int, int> bottom_left, std::pair<int, int> size);
 
         virtual ~histogram() {}
     };

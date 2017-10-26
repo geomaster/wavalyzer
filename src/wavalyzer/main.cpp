@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    try {
+    {
         ifstream f(conf.filename);
         wavalyzer::wav_file w(f);
 
@@ -265,10 +265,6 @@ int main(int argc, char* argv[])
 
         window.set_event_handler(&handler);
         window.start();
-    } catch (exception& e) {
-        cerr << "Error: " << e.what() << endl;
-        return -2;
     }
-
     return 0;
 }

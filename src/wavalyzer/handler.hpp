@@ -12,6 +12,7 @@ namespace wavalyzer::gui {
         int min_freq, max_freq, step_freq, step_ms, histogram_buckets;
         histogram *hist;
         spectrogram *spect;
+        int save_counter;
 
     public:
         main_diagram_event_handler(const std::vector<fft_result_t>& _ffts,

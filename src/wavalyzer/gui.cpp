@@ -152,6 +152,7 @@ void diagram_window::create_axes()
 {
     vertical_rule.setSize(sf::Vector2f(VRULE_WEIGHT, ZERO_Y - ONE_Y));
     vertical_rule.setFillColor(sf::Color(VRULE_COLOR));
+    vertical_rule.setPosition(sf::Vector2f(-WINDOW_WIDTH, -WINDOW_HEIGHT));
 
     horizontal_rule.setSize(sf::Vector2f(MSG_END_X - TITLE_X, HRULE_WEIGHT));
     horizontal_rule.setFillColor(sf::Color(AXIS_COLOR));

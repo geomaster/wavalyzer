@@ -128,15 +128,11 @@ void spectrogram::set_x_range(pair<float, float> new_range)
     cached_texture_dirty = true;
 }
 
-void spectrogram::render_spectrogram_texture(pair<int, int> size)
+void spectrogram::render_texture_bytes(pair<int, int> size)
 {
-    if (cached_texture_size != size) {
-        if (!cached_texture.create(size.first, size.second)) {
-            throw gui_exception("Could not create spectrogram texture");
-        }
-
-        cached_texture_size = size;
-        pixels.resize(size.first * size.second * 4);
+    size_t new_size = size.first * size.second * 4;
+    if (new_size != pixels.size()) {
+        pixels.resize(new_size);
     }
 
     float hertz_px_step = static_cast<float>(max_hertz - min_hertz) / ((size.second - 1) * step_hertz),
@@ -186,6 +182,19 @@ void spectrogram::render_spectrogram_texture(pair<int, int> size)
         last_bucket = bucket;
     }
 
+}
+
+void spectrogram::update_texture(pair<int, int> size)
+{
+    if (cached_texture_size != size) {
+        if (!cached_texture.create(size.first, size.second)) {
+            throw gui_exception("Could not create spectrogram texture");
+        }
+
+        cached_texture_size = size;
+    }
+
+    render_texture_bytes(size);
     cached_texture.update(&pixels[0]);
 }
 
@@ -219,13 +228,19 @@ sf::Color spectrogram::color_from_dbfs(float dbfs)
 void spectrogram::draw(sf::RenderTarget* target, pair<int, int> bottom_left, pair<int, int> size)
 {
     if (cached_texture_size != size || cached_texture_dirty) {
-        render_spectrogram_texture(size);
+        update_texture(size);
         cached_texture_dirty = false;
     }
 
     sf::Sprite new_sprite(cached_texture);
     new_sprite.setPosition(sf::Vector2f(bottom_left.first, bottom_left.second - size.second));
     target->draw(new_sprite);
+}
+
+void spectrogram::draw_to_pdf(sfml_pdf& pdf, pair<int, int> bottom_left, pair<int, int> size)
+{
+    render_texture_bytes(size);
+    pdf.draw(&pixels[0], make_pair(bottom_left.first, bottom_left.second - size.second), size);
 }
 
 spectrogram::~spectrogram()
