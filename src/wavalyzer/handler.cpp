@@ -58,7 +58,7 @@ void main_diagram_event_handler::on_key_press(sf::Keyboard::Key key)
         parent->set_diagram(spect);
     } else if (key == sf::Keyboard::P) {
         sfml_pdf pdf;
-        cout << "Please wait, rendering the diagram..." << endl;
+        cout << "[+] Please wait, rendering the diagram..." << endl;
 
         if (hist != nullptr) {
             pdf.draw_diagram(hist, false);
@@ -69,9 +69,9 @@ void main_diagram_event_handler::on_key_press(sf::Keyboard::Key key)
         string filename = "diagram_" + to_string(++save_counter) + ".pdf";
         try {
             pdf.save_to_file(filename);
-            cerr << "Saved to file`" << filename << "`" << endl;
+            cerr << "[|] Saved to file`" << filename << "`" << endl;
         } catch (std::exception &e) {
-            cerr << "Failed saving file `" << filename << "`: " << e.what() << endl;
+            cerr << "[-] Failed saving file `" << filename << "`: " << e.what() << endl;
         }
     }
 }

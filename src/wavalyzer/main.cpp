@@ -194,13 +194,14 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    {
+    try {
         ifstream f(conf.filename);
         wavalyzer::wav_file w(f);
 
-        cout << "Channels: " << w.get_channels() << endl;
-        cout << "Total samples: " << w.get_total_samples() << endl;
-        cout << "Sample rate: " << w.get_sample_rate() << endl;
+        cout << "[+] File `" << conf.filename << "` loaded!" << endl <<
+                "[|] Channels: " << w.get_channels() << endl <<
+                "[|] Total samples: " << w.get_total_samples() << endl <<
+                "[|] Sample rate: " << w.get_sample_rate() << endl;
 
         vector<float> samples;
         w.read_samples(samples, w.get_total_samples());
@@ -218,7 +219,7 @@ int main(int argc, char* argv[])
         int report_ms_interval = total_ms / (20 * ms_step);
         float ms_per_window = window_size / ms_samples;
 
-        cout << "Analyzing. This may take a while.\n";
+        cout << "[+] Analyzing. This may take a while.\n";
 
         float gain_compensation = conf.hamming ? 1.0f / wavalyzer::get_hamming_window_gain() :
                                                    1.0f / wavalyzer::get_hann_window_gain();
@@ -254,7 +255,7 @@ int main(int argc, char* argv[])
                                                        gain_compensation));
 
             if (counter % report_ms_interval == 0) {
-                cout << fixed << "Analyzed " <<
+                cout << fixed << "[|] Analyzed " <<
                     i << "ms of " << total_ms - ms_per_window << "ms ("
                     << setprecision(2) << static_cast<float>(100 * i) / (total_ms - ms_per_window) << " %)" << endl;
             }
@@ -263,8 +264,24 @@ int main(int argc, char* argv[])
         wavalyzer::gui::diagram_window window(nullptr);
         wavalyzer::gui::main_diagram_event_handler handler(ffts, min_freq, max_freq, freq_step, ms_step, buckets);
 
+        cout << endl <<
+                "[+] GUI running!" << endl <<
+                "[|] Use the mouse wheel to zoom into areas of the plot." << endl <<
+                "[|] Click and drag to pan around the plot." << endl <<
+                "[|] In the spectrogram view, click somewhere on the plot to view the " << endl <<
+                "    histogram of that instant." << endl <<
+                "[|] When in the histogram view, press Backspace to go back to viewing" << endl <<
+                "    the spectrogram." << endl <<
+                "[|] Press the P key at any time to save a PDF of the current contents" << endl <<
+                "    of the screen. The PDFs will be saved as diagram_1.pdf," << endl <<
+                "    diagram_2.pdf, etc. in your current working directory." << endl << endl;
+
         window.set_event_handler(&handler);
         window.start();
+    } catch (exception& e) {
+        cerr << "[-] An error has occurred: " << e.what() << endl;
+        return -1;
     }
+
     return 0;
 }
