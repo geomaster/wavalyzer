@@ -69,14 +69,12 @@ fft_result_t wavalyzer::fft_from_samples(const vector<float>& samples,
         int upper_sample = hertz_to_sample(upper_hertz, sample_rate, samples.size());
 
         // Take the max for each bucket
-        float mx = 0.0f;
+        float sum = 0.0f;
         for (int sample = lower_sample; sample <= upper_sample; sample++) {
-            if (abs(samples_c[sample]) > mx) {
-                mx = abs(samples_c[sample]);
-            }
+            sum += abs(samples_c[sample]);
         }
 
-        res.push_back(factor * mx);
+        res.push_back(sum * factor);
     }
 
     return res;
