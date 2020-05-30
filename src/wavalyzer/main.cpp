@@ -217,6 +217,9 @@ int main(int argc, char* argv[])
         int ms_step = static_cast<int>(conf.ms_step);
 
         int report_ms_interval = total_ms / (20 * ms_step);
+        // Prevent a SIGFPE if the input file is short enough to make this 0
+        if (report_ms_interval == 0)
+            report_ms_interval = 1;
         float ms_per_window = window_size / ms_samples;
 
         cout << "[+] Analyzing. This may take a while.\n";
